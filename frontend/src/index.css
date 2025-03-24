@@ -1,0 +1,68 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-gray-100 min-h-screen;
+}
+
+.building-container {
+  @apply min-h-[768px] flex flex-col border border-gray-300 rounded-lg shadow-lg overflow-hidden;
+}
+
+.elevator-shaft {
+  @apply relative border-x border-gray-300 min-h-[768px] h-full;
+}
+
+.elevator {
+  @apply absolute w-full border-2 bg-white rounded-md z-10;
+  height: 128px;
+}
+
+.elevator-body {
+  @apply bg-gray-200 p-1 border-2 border-gray-300;
+}
+
+.elevator-display {
+  @apply bg-gray-800 border-t-2 border-gray-800 rounded-t-md text-white text-center;
+}
+
+.elevator-door {
+  @apply h-full bg-gray-400;
+}
+
+.floor-button-active {
+  @apply outline outline-2 outline-yellow-600;
+}
+
+.floor-button {
+  @apply px-3 py-1 border rounded-md;
+}
+
+.floor-button-up {
+  @apply bg-green-200 text-green-800 hover:bg-green-300;
+}
+
+.floor-button-down {
+  @apply bg-red-200 text-red-800 hover:bg-red-300;
+}
+
+.floor-indicator {
+  @apply text-xl font-semibold text-center py-2;
+}
+
+.floor {
+  @apply h-32 border-b border-gray-300;
+}
+
+.floor-divider {
+  @apply h-32 border-b border-dotted border-gray-300;
+}
+
+.controls-panel {
+  @apply grid grid-cols-3 gap-1 p-1 mt-1 w-full h-full;
+}
+
+.panel-button {
+  @apply px-2 py-1 text-xs border rounded-md;
+}
