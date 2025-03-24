@@ -1,7 +1,7 @@
 import express, { Request, RequestHandler, Response } from 'express';
 import cors from 'cors';
 import ElevatorSystem from './elevator/ElevatorSystem';
-import { Direction } from './elevator/types';
+import { directions, Direction } from './elevator/types';
 
 const app = express();
 app.use(express.json());
@@ -18,7 +18,7 @@ system.init().catch(console.error);
 const requestElevatorHandler: RequestHandler = async (req: Request, res: Response) => {
     try {
         const { floor, direction } = req.body;
-        if (typeof floor !== 'number' || !(direction in Direction)) {
+        if (typeof floor !== 'number' || !Object.values(directions).includes(direction)) {
             res.status(400).json({ error: 'Invalid parameters' });
             return;
         }
@@ -57,7 +57,9 @@ app.get('/api/status', (_req: Request, res: Response) => {
         targetFloors: elevator.targetFloors.map((target) => target.floor),
         isOpeningDoor: elevator.isOpeningDoor,
     }));
-    res.json({ elevators });
+
+    const externalRequests = system.getSharedRequests().externalRequests;
+    res.json({ elevators, externalRequests });
 });
 
 // Start server

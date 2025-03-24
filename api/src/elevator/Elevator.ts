@@ -1,4 +1,10 @@
-import { ElevatorState, Direction, TargetFloor } from './types';
+import { 
+    elevatorStates, 
+    ElevatorState, 
+    Direction, 
+    TargetFloor, 
+    directions
+} from './types';
 import SharedRequests from './SharedRequests';
 
 class Elevator {
@@ -9,7 +15,7 @@ class Elevator {
         private stopTime: number = 4, // Simulate 4s to stop at the floor, then move to the next state
     ) {
         this.currentFloor = 0;
-        this.state = ElevatorState.IDLE;
+        this.state = elevatorStates.IDLE;
         this.targetFloors = [];
         this.sharedRequests = SharedRequests.getInstance();
     }
@@ -40,27 +46,27 @@ class Elevator {
         const nextTarget = this.getNextTargetFloor();
 
         if (!nextTarget) {
-            this.state = ElevatorState.IDLE;
+            this.state = elevatorStates.IDLE;
             return;
         }
 
         console.log('nextTarget', nextTarget.floor, this.currentFloor);
         if (nextTarget.floor > this.currentFloor) {
-            this.state = ElevatorState.MOVING_UP;
+            this.state = elevatorStates.MOVING_UP;
         } 
         if (nextTarget.floor < this.currentFloor) {
-            this.state = ElevatorState.MOVING_DOWN;
+            this.state = elevatorStates.MOVING_DOWN;
         }
     }
 
     private getNextTargetFloor(): TargetFloor | null {
         if (this.targetFloors.length === 0) return null;
 
-        if (this.state === ElevatorState.MOVING_UP) {
+        if (this.state === elevatorStates.MOVING_UP) {
             // First handle floors above current floor in the same direction
             const upwardTargets = this.targetFloors.filter(
                 target => target.floor >= this.currentFloor && 
-                (!target.direction || target.direction === Direction.UP)
+                (!target.direction || target.direction === directions.UP)
             );
             if (upwardTargets.length > 0) {
                 return upwardTargets.reduce((prev, curr) => 
@@ -69,11 +75,11 @@ class Elevator {
             }
         }
 
-        if (this.state === ElevatorState.MOVING_DOWN) {
+        if (this.state === elevatorStates.MOVING_DOWN) {
             // First handle floors below current floor in the same direction
             const downwardTargets = this.targetFloors.filter(
                 target => target.floor <= this.currentFloor && 
-                (!target.direction || target.direction === Direction.DOWN)
+                (!target.direction || target.direction === directions.DOWN)
             );
             if (downwardTargets.length > 0) {
                 return downwardTargets.reduce((prev, curr) => 
@@ -86,11 +92,11 @@ class Elevator {
     }
 
     public calculateDistance(floor: number): number {
-        if (this.state === ElevatorState.IDLE) {
+        if (this.state === elevatorStates.IDLE) {
             return Math.abs(this.currentFloor - floor);
         }
 
-        if (this.state === ElevatorState.MOVING_UP) {
+        if (this.state === elevatorStates.MOVING_UP) {
             if (floor >= this.currentFloor) {
                 return floor - this.currentFloor;
             }
@@ -108,7 +114,7 @@ class Elevator {
     }
 
 
-    private clearExternalRequest(floor: number, direction: 'up' | 'down'): void {
+    private clearExternalRequest(floor: number, direction: Direction): void {
         this.sharedRequests.externalRequests[floor][direction] = false;
         this.sharedRequests.assignedRequests[floor][direction] = null;
     }
@@ -119,57 +125,56 @@ class Elevator {
         );
     }
 
-    private clearFloorRequest(floor: number, direction: 'up' | 'down'): void {
+    private clearFloorRequest(floor: number, direction: Direction): void {
         this.clearExternalRequest(floor, direction);
-        this.removeExternalTargetFloor(floor, Direction[direction.toUpperCase() as 'UP' | 'DOWN']);
+        this.removeExternalTargetFloor(floor, direction);
         this.willStop = true;
     }
 
     // Move elevator to the next floor
     public async move(): Promise<void> {
         this.updateState();
-        console.log('elevator state', this.state);
         // Simulate 1s to lift to the next floor if no one press the button at current floor
-        if (this.state === ElevatorState.MOVING_UP) {
+        if (this.state === elevatorStates.MOVING_UP) {
             console.log(`🔼 Elevator ${this.id} starting to move up from floor ${this.currentFloor}`);
             await new Promise(resolve => setTimeout(resolve, this.moveSpeed * 1000));
             this.currentFloor++;
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate the time to slow down and stop
             console.log(`⬆️ Elevator ${this.id} completed upward movement, arriving at floor ${this.currentFloor}`);
         } 
-        if (this.state === ElevatorState.MOVING_DOWN) {
+        if (this.state === elevatorStates.MOVING_DOWN) {
             console.log(`🔽 Elevator ${this.id} starting to move down from floor ${this.currentFloor}`);
             await new Promise(resolve => setTimeout(resolve, this.moveSpeed * 1000));
             this.currentFloor--;
+            await new Promise(resolve => setTimeout(resolve, 1000));
             console.log(`⬇️ Elevator ${this.id} completed downward movement, arriving at floor ${this.currentFloor}`);
         }
 
         // Make decision to answer which external request
         await this.sharedRequests.withLock(async () => {            
             // Check for requests at current floor when pass by
-            if (this.state === ElevatorState.MOVING_UP && 
+            if (this.state === elevatorStates.MOVING_UP && 
                 this.sharedRequests.externalRequests[this.currentFloor].up 
             ) {
                 console.log(`🛑 Elevator ${this.id} stopping at floor ${this.currentFloor} to respond to UP request`);
                 this.clearFloorRequest(this.currentFloor, 'up');
             }
             else if (
-                this.state === ElevatorState.MOVING_DOWN &&
+                this.state === elevatorStates.MOVING_DOWN &&
                 this.sharedRequests.externalRequests[this.currentFloor].down
             ) {
                 console.log(`🛑 Elevator ${this.id} stopping at floor ${this.currentFloor} to respond to DOWN request`);
                 this.clearFloorRequest(this.currentFloor, 'down');
             }
             // Request an elevator and there is an idle elevator at current floor
-            if (this.state === ElevatorState.IDLE && this.willStop) {
+            if (this.state === elevatorStates.IDLE && this.willStop) {
                 this.clearFloorRequest(this.currentFloor, 'up');
                 this.clearFloorRequest(this.currentFloor, 'down');
             }
 
             // This floor is the last target floor
             if (this.targetFloors.length === 1 && this.targetFloors[0].floor === this.currentFloor && this.targetFloors[0].direction) {
-                const directionKey = this.targetFloors[0].direction.toLowerCase() as 'up' | 'down';
-                this.clearFloorRequest(this.currentFloor, directionKey);
+                this.clearFloorRequest(this.currentFloor, this.targetFloors[0].direction);
             }
 
             // Handle top and bottom floor special cases
@@ -206,7 +211,7 @@ class Elevator {
     // Start elevator operation
     public async operate(): Promise<void> {
         while (true) {
-            if (this.state === ElevatorState.IDLE && this.targetFloors.length === 0) {
+            if (this.state === elevatorStates.IDLE && this.targetFloors.length === 0) {
                 await new Promise(resolve => setTimeout(resolve, 100)); // Small delay to prevent CPU overuse
             }
             else {

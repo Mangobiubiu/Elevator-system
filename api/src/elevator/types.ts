@@ -1,13 +1,15 @@
-export enum Direction {
-    UP = 'UP',
-    DOWN = 'DOWN'
-}
+export const directions = {
+    UP: 'up',
+    DOWN: 'down'
+} as const;
+export type Direction = typeof directions[keyof typeof directions];
 
-export enum ElevatorState {
-    MOVING_UP = 'MOVING_UP',
-    MOVING_DOWN = 'MOVING_DOWN',
-    IDLE = 'IDLE'
-}
+export const elevatorStates = {
+    MOVING_UP: 'MOVING_UP',
+    MOVING_DOWN: 'MOVING_DOWN',
+    IDLE: 'IDLE'
+} as const;
+export type ElevatorState = typeof elevatorStates[keyof typeof elevatorStates];
 
 export interface ElevatorRequest {
     floor: number;

@@ -1,4 +1,9 @@
-import { Direction, ElevatorState } from './types';
+import { 
+    Direction, 
+    directions, 
+    ElevatorState, 
+    elevatorStates,
+} from './types';
 import Elevator from './Elevator';
 import SharedRequests from './SharedRequests';
 
@@ -72,16 +77,16 @@ class ElevatorSystem {
         this.elevators.forEach((elevator, id) => {
             // Check if the elevator is eligible to handle the request
             const isEligible = 
-                elevator.state === ElevatorState.IDLE ||
-                (elevator.state === ElevatorState.MOVING_UP && direction === Direction.UP && elevator.currentFloor < floor) ||
-                (elevator.state === ElevatorState.MOVING_UP && direction === Direction.DOWN && floor === this.maxFloor) ||
-                (elevator.state === ElevatorState.MOVING_DOWN && direction === Direction.DOWN && elevator.currentFloor > floor) ||
-                (elevator.state === ElevatorState.MOVING_DOWN && direction === Direction.UP && floor === 0);
+                elevator.state === elevatorStates.IDLE ||
+                (elevator.state === elevatorStates.MOVING_UP && direction === directions.UP && elevator.currentFloor < floor) ||
+                (elevator.state === elevatorStates.MOVING_UP && direction === directions.DOWN && floor === this.maxFloor) ||
+                (elevator.state === elevatorStates.MOVING_DOWN && direction === directions.DOWN && elevator.currentFloor > floor) ||
+                (elevator.state === elevatorStates.MOVING_DOWN && direction === directions.UP && floor === 0);
 
             console.log(`🚪 Elevator ${id} eligibility for ${direction} request at floor ${floor}: ${isEligible}`);
             if (isEligible) {
                 const distance = elevator.calculateDistance(floor);
-                if (distance === shortestDistance && elevator.state === ElevatorState.IDLE && elevatorState !== ElevatorState.IDLE) {
+                if (distance === shortestDistance && elevator.state === elevatorStates.IDLE && elevatorState !== elevatorStates.IDLE) {
                     bestElevator = id;
                     elevatorState = elevator.state;
                 }
@@ -108,10 +113,10 @@ class ElevatorSystem {
             // Handle unassigned requests
             for (let floor = 0; floor <= this.maxFloor; floor++) {
                 if (this.sharedRequests.externalRequests[floor].up && this.sharedRequests.assignedRequests[floor].up === null) {
-                    this.assignElevator(floor, Direction.UP);
+                    this.assignElevator(floor, directions.UP);
                 }
                 if (this.sharedRequests.externalRequests[floor].down && this.sharedRequests.assignedRequests[floor].down === null) {
-                    this.assignElevator(floor, Direction.DOWN);
+                    this.assignElevator(floor, directions.DOWN);
                 }
             }
         });
@@ -119,6 +124,10 @@ class ElevatorSystem {
 
     public getElevators(): Elevator[] {
         return this.elevators;
+    }
+
+    public getSharedRequests(): SharedRequests {
+        return this.sharedRequests;
     }
 
     public async init(): Promise<void> {
