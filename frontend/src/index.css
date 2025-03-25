@@ -32,7 +32,7 @@ body {
 }
 
 .floor-button-active {
-  @apply outline outline-2 outline-yellow-600;
+  @apply outline outline-2 outline-blue-500;
 }
 
 .floor-button {
