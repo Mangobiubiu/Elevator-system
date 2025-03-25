@@ -64,13 +64,7 @@ app.get('/api/status', (_req: Request, res: Response) => {
 });
 
 // Start server
-const PORT = 3000;
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
-  console.log('\nAPI Endpoints:');
-  console.log('1. Request Elevator: POST /api/request-elevator');
-  console.log('   Body: { "floor": number, "direction": "UP" | "DOWN" }');
-  console.log('2. Select Floor: POST /api/select-floor');
-  console.log('   Body: { "elevatorId": number, "targetFloor": number }');
-  console.log('3. Get Status: GET /api/status');
-});
+const PORT = process.env.PORT || 3000;
+const NODE_ENV = process.env.NODE_ENV || 'development';
+
+app.listen(PORT);
