@@ -1,5 +1,5 @@
 import React from 'react';
-import FloorButton from './FloorButton.tsx';
+import FloorButton from './FloorButton';
 import { directions } from '../types/elevator';
 import { useElevator } from '../contexts/ElevatorContext';
 

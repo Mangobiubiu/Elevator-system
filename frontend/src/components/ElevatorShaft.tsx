@@ -1,5 +1,5 @@
 import React from 'react';
-import ElevatorCar from './ElevatorCar.tsx';
+import ElevatorCar from './ElevatorCar';
 import { Elevator } from '../types/elevator';
 
 interface ElevatorShaftProps {
