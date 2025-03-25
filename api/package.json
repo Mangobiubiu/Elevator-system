@@ -1,27 +1,30 @@
 {
   "name": "elevator",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "dist/server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "ts-node src/server.ts",
+    "start": "node dist/server.js",
+    "dev": "ts-node src/server.ts",
     "test:elevator": "ts-node src/test.ts",
     "format": "prettier --write \"src/**/*.{ts,js,json}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,js,json}\""
+    "format:check": "prettier --check \"src/**/*.{ts,js,json}\"",
+    "build": "tsc",
+    "postinstall": "npm run build"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "devDependencies": {
+    "prettier": "^3.2.5"
+  },
+  "dependencies": {
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.1",
     "@types/node": "^20.11.24",
-    "prettier": "^3.2.5",
     "ts-node": "^10.9.2",
-    "typescript": "^5.3.3"
-  },
-  "dependencies": {
+    "typescript": "^5.3.3",
     "cors": "^2.8.5",
     "express": "^4.18.3"
   }
