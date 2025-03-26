@@ -10,6 +10,7 @@ interface ElevatorContextType {
   };
   callElevator: (floor: number, direction: Direction) => Promise<void>;
   selectFloor: (elevatorId: number, floor: number) => Promise<void>;
+  reset: () => Promise<void>;
 }
 
 const ElevatorContext = createContext<ElevatorContextType | undefined>(undefined);
@@ -50,10 +51,19 @@ export function ElevatorProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Polling the status every 500ms
+  const reset = async () => {
+    try {
+      await api.reset();
+      await fetchStatus();
+    } catch (error) {
+      console.error('Failed to reset system:', error);
+    }
+  };
+
+  // Polling the status every 200ms
   useEffect(() => {
     fetchStatus();
-    const intervalId = setInterval(fetchStatus, 500);
+    const intervalId = setInterval(fetchStatus, 200);
     return () => clearInterval(intervalId);
   }, []);
 
@@ -65,6 +75,7 @@ export function ElevatorProvider({ children }: { children: React.ReactNode }) {
           isInitializing,
           externalRequests,
         },
+        reset,
         callElevator,
         selectFloor,
       }}

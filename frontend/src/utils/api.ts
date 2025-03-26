@@ -64,6 +64,27 @@ const api = {
       throw error;
     }
   },
+
+  // Reset state of the elevator system
+  reset: async (): Promise<any> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/reset`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error('Error resetting system:', error);
+      throw error;
+    }
+  },
 };
 
 export default api;
