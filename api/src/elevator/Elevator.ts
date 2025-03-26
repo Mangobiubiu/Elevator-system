@@ -50,6 +50,12 @@ class Elevator {
       return;
     }
 
+    // If the next target is the current floor and is the only target, the elevator will idle
+    if (nextTarget.floor === this.currentFloor && this.targetFloors.length === 1) {
+      this.state = elevatorStates.IDLE;
+      return;
+    }
+
     if (nextTarget.floor > this.currentFloor) {
       this.state = elevatorStates.MOVING_UP;
     }
@@ -199,6 +205,8 @@ class Elevator {
       this.clearFloorRequest(currentFloor, targetFloors[0].direction);
     }
   }
+
+  // private handle;
 
   // Move elevator to the next floor
   public async move(): Promise<void> {
