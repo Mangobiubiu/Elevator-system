@@ -10,7 +10,7 @@ class Elevator {
   ) {
     this.currentFloor = 0;
     this.state = elevatorStates.IDLE;
-    this.targetFloors = [];
+    this.targetFloors = []; // Will never include both up and down for the same floor
     this.sharedRequests = SharedRequests.getInstance();
   }
 
@@ -43,14 +43,13 @@ class Elevator {
   }
 
   private updateState(): void {
-    const nextTarget = this.getNextTargetFloor();
+    const nextTarget = this.getNextTargetFloor(this.targetFloors);
 
     if (!nextTarget) {
       this.state = elevatorStates.IDLE;
       return;
     }
 
-    console.log('nextTarget', nextTarget.floor, this.currentFloor);
     if (nextTarget.floor > this.currentFloor) {
       this.state = elevatorStates.MOVING_UP;
     }
@@ -59,12 +58,12 @@ class Elevator {
     }
   }
 
-  private getNextTargetFloor(): TargetFloor | null {
-    if (this.targetFloors.length === 0) return null;
+  private getNextTargetFloor(targetFloors: TargetFloor[]): TargetFloor | null {
+    if (targetFloors.length === 0) return null;
 
     if (this.state === elevatorStates.MOVING_UP) {
       // First handle floors above current floor in the same direction
-      const upwardTargets = this.targetFloors.filter(
+      const upwardTargets = targetFloors.filter(
         target =>
           target.floor >= this.currentFloor &&
           (!target.direction || target.direction === directions.UP)
@@ -76,7 +75,7 @@ class Elevator {
 
     if (this.state === elevatorStates.MOVING_DOWN) {
       // First handle floors below current floor in the same direction
-      const downwardTargets = this.targetFloors.filter(
+      const downwardTargets = targetFloors.filter(
         target =>
           target.floor <= this.currentFloor &&
           (!target.direction || target.direction === directions.DOWN)
@@ -86,7 +85,7 @@ class Elevator {
       }
     }
 
-    return this.targetFloors[0];
+    return targetFloors[0];
   }
 
   public calculateDistance(floor: number): number {
@@ -116,16 +115,89 @@ class Elevator {
     this.sharedRequests.assignedRequests[floor][direction] = null;
   }
 
-  private removeExternalTargetFloor(floor: number, direction: Direction): void {
-    this.targetFloors = this.targetFloors.filter(
-      target => target.floor !== floor || target.direction !== direction
-    );
+  private removeExternalTargetFloor(
+    floor: number,
+    direction: Direction,
+    targetFloors: TargetFloor[]
+  ): TargetFloor[] {
+    return targetFloors.filter(target => target.floor !== floor || target.direction !== direction);
   }
 
   private clearFloorRequest(floor: number, direction: Direction): void {
     this.clearExternalRequest(floor, direction);
-    this.removeExternalTargetFloor(floor, direction);
+    this.targetFloors = this.removeExternalTargetFloor(floor, direction, this.targetFloors);
     this.willStop = true;
+  }
+
+  // Check if elevator is passing by the floor and the request is at the current floor
+  private handleElevatorPassingBy(
+    elevatorState: ElevatorState,
+    currentFloor: number,
+    targetFloors: TargetFloor[]
+  ): void {
+    if (
+      elevatorState !== elevatorStates.MOVING_UP &&
+      elevatorState !== elevatorStates.MOVING_DOWN
+    ) {
+      return;
+    }
+
+    const direction = elevatorState === elevatorStates.MOVING_UP ? directions.UP : directions.DOWN;
+
+    const isRequestAtCurrentFloor = this.sharedRequests.externalRequests[currentFloor][direction];
+    if (!isRequestAtCurrentFloor) return;
+    const newTargetFloors = this.removeExternalTargetFloor(currentFloor, direction, targetFloors);
+    const nextTargetAfterCurrentOne = this.getNextTargetFloor(newTargetFloors);
+
+    if (!nextTargetAfterCurrentOne) return;
+
+    if (direction === directions.UP && nextTargetAfterCurrentOne.floor > currentFloor) {
+      this.clearFloorRequest(currentFloor, direction);
+    }
+    if (direction === directions.DOWN && nextTargetAfterCurrentOne.floor < currentFloor) {
+      this.clearFloorRequest(currentFloor, direction);
+    }
+  }
+
+  private handleReverseAtBoundary(
+    elevatorState: ElevatorState,
+    currentFloor: number,
+    targetFloors: TargetFloor[]
+  ): void {
+    const externalRequestTarget = targetFloors.find(
+      target => target.floor === currentFloor && target.direction
+    );
+    if (!externalRequestTarget) return;
+    const direction = externalRequestTarget?.direction as Direction;
+
+    const newTargetFloors = this.removeExternalTargetFloor(currentFloor, direction, targetFloors);
+    const nextTargetAfterCurrentOne = this.getNextTargetFloor(newTargetFloors);
+
+    if (!nextTargetAfterCurrentOne) return;
+
+    // Moving up to the target boundary and there is a request to go down
+    if (elevatorState === elevatorStates.MOVING_UP) {
+      if (nextTargetAfterCurrentOne.floor < currentFloor) {
+        this.clearFloorRequest(currentFloor, direction);
+      }
+    }
+
+    // Moving down to the target boundary and there is a request to go up
+    if (elevatorState === elevatorStates.MOVING_DOWN) {
+      if (nextTargetAfterCurrentOne.floor > currentFloor) {
+        this.clearFloorRequest(this.currentFloor, direction);
+      }
+    }
+  }
+
+  private handleLastTargetFloor(currentFloor: number, targetFloors: TargetFloor[]): void {
+    if (
+      targetFloors.length === 1 &&
+      targetFloors[0].floor === currentFloor &&
+      targetFloors[0].direction
+    ) {
+      this.clearFloorRequest(currentFloor, targetFloors[0].direction);
+    }
   }
 
   // Move elevator to the next floor
@@ -145,7 +217,7 @@ class Elevator {
       console.log(`🔽 Elevator ${this.id} starting to move down from floor ${this.currentFloor}`);
       await new Promise(resolve => setTimeout(resolve, this.moveSpeed * 1000));
       this.currentFloor--;
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate the time to slow down and stop
       console.log(
         `⬇️ Elevator ${this.id} completed downward movement, arriving at floor ${this.currentFloor}`
       );
@@ -154,48 +226,13 @@ class Elevator {
     // Make decision to answer which external request
     await this.sharedRequests.withLock(async () => {
       // Check for requests at current floor when pass by
-      if (
-        this.state === elevatorStates.MOVING_UP &&
-        this.sharedRequests.externalRequests[this.currentFloor].up
-      ) {
-        console.log(
-          `🛑 Elevator ${this.id} stopping at floor ${this.currentFloor} to respond to UP request`
-        );
-        this.clearFloorRequest(this.currentFloor, 'up');
-      } else if (
-        this.state === elevatorStates.MOVING_DOWN &&
-        this.sharedRequests.externalRequests[this.currentFloor].down
-      ) {
-        console.log(
-          `🛑 Elevator ${this.id} stopping at floor ${this.currentFloor} to respond to DOWN request`
-        );
-        this.clearFloorRequest(this.currentFloor, 'down');
-      }
-      // Request an elevator and there is an idle elevator at current floor
-      if (this.state === elevatorStates.IDLE && this.willStop) {
-        this.clearFloorRequest(this.currentFloor, 'up');
-        this.clearFloorRequest(this.currentFloor, 'down');
-      }
+      this.handleElevatorPassingBy(this.state, this.currentFloor, this.targetFloors);
+
+      // Handle reverse direction at boundary
+      this.handleReverseAtBoundary(this.state, this.currentFloor, this.targetFloors);
 
       // This floor is the last target floor
-      if (
-        this.targetFloors.length === 1 &&
-        this.targetFloors[0].floor === this.currentFloor &&
-        this.targetFloors[0].direction
-      ) {
-        this.clearFloorRequest(this.currentFloor, this.targetFloors[0].direction);
-      }
-
-      // Handle top and bottom floor special cases
-      if (
-        this.currentFloor === this.maxFloor &&
-        this.sharedRequests.externalRequests[this.currentFloor].down
-      ) {
-        this.clearFloorRequest(this.currentFloor, 'down');
-      }
-      if (this.currentFloor === 0 && this.sharedRequests.externalRequests[this.currentFloor].up) {
-        this.clearFloorRequest(this.currentFloor, 'up');
-      }
+      this.handleLastTargetFloor(this.currentFloor, this.targetFloors);
 
       // Handle target floors selected inside elevator
       const currentTargetIndex = this.targetFloors.findIndex(target =>

@@ -54,7 +54,7 @@ app.get('/api/status', (_req: Request, res: Response) => {
     currentFloor: elevator.currentFloor,
     state: elevator.state,
     targetFloors: elevator.targetFloors
-      .filter(target => target.floor && !target.direction)
+      .filter(target => !target.direction)
       .map(target => target.floor),
     isOpeningDoor: elevator.isOpeningDoor,
   }));

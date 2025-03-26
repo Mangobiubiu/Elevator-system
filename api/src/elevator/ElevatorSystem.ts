@@ -28,7 +28,6 @@ class ElevatorSystem {
 
     const directionKey: DirectionKey = direction.toLowerCase() as DirectionKey;
 
-    console.log('-----------process request-----------', floor, direction);
     await this.sharedRequests.withLock(() => {
       // Skip if the request is already registered
       if (this.sharedRequests.externalRequests[floor][directionKey]) return;
@@ -70,26 +69,43 @@ class ElevatorSystem {
 
     this.elevators.forEach((elevator, id) => {
       // Check if the elevator is eligible to handle the request
+      // Check if the elevator is eligible to handle the request
+      // 1. Idle elevator is eligible
+      // 2. Elevator is eligible if the request is up and the elevator is moving up
+      // 3. Elevator is eligible if the request is down at the top floor and the elevator is moving up
+      // 4. Elevator is eligible if the request is down and the elevator is moving down
+      // 5. Elevator is eligible if the request is up at the bottom floor and the elevator is moving down
+      // 6. All of those elevators should not already have a external target for this floor
+
+      const haveExternalTarget = elevator.targetFloors.some(
+        target => target.floor === floor && target.direction
+      );
+
+      const stoppingAtCurrentFloor = elevator.currentFloor === floor && elevator.willStop;
+
       const isEligible =
-        elevator.state === elevatorStates.IDLE ||
-        (elevator.state === elevatorStates.MOVING_UP &&
-          direction === directions.UP &&
-          elevator.currentFloor < floor) ||
-        (elevator.state === elevatorStates.MOVING_UP &&
-          direction === directions.DOWN &&
-          floor === this.maxFloor) ||
-        (elevator.state === elevatorStates.MOVING_DOWN &&
-          direction === directions.DOWN &&
-          elevator.currentFloor > floor) ||
-        (elevator.state === elevatorStates.MOVING_DOWN &&
-          direction === directions.UP &&
-          floor === 0);
+        !haveExternalTarget &&
+        !stoppingAtCurrentFloor &&
+        (elevator.state === elevatorStates.IDLE ||
+          (elevator.state === elevatorStates.MOVING_UP &&
+            direction === directions.UP &&
+            elevator.currentFloor < floor) ||
+          (elevator.state === elevatorStates.MOVING_UP &&
+            direction === directions.DOWN &&
+            floor === this.maxFloor) ||
+          (elevator.state === elevatorStates.MOVING_DOWN &&
+            direction === directions.DOWN &&
+            elevator.currentFloor > floor) ||
+          (elevator.state === elevatorStates.MOVING_DOWN &&
+            direction === directions.UP &&
+            floor === 0));
 
       console.log(
         `🚪 Elevator ${id} eligibility for ${direction} request at floor ${floor}: ${isEligible}`
       );
       if (isEligible) {
         const distance = elevator.calculateDistance(floor);
+        // Shorttest distance is priority, if the distance is the same, choose the idle elevator
         if (
           distance === shortestDistance &&
           elevator.state === elevatorStates.IDLE &&
