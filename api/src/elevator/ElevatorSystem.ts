@@ -195,9 +195,18 @@ class ElevatorSystem {
     console.log('Elevator system initialized with', this.elevators.length, 'elevators');
   }
 
-  public stop(): void {
-    this.isRunning = false;
-    console.log('Elevator system stopped');
+  public reset(): void {
+    // Reset all elevators to initial state
+    this.elevators.forEach(elevator => {
+      elevator.currentFloor = 0;
+      elevator.state = elevatorStates.IDLE;
+      elevator.targetFloors = [];
+      elevator.willStop = false;
+      elevator.isOpeningDoor = false;
+    });
+
+    // Reset shared requests
+    this.sharedRequests.reset();
   }
 }
 

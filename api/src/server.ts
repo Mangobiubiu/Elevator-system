@@ -48,6 +48,16 @@ app.post('/api/request-elevator', requestElevatorHandler);
 
 app.post('/api/select-floor', selectFloorHandler);
 
+// Reset endpoint
+app.post('/api/reset', (_req: Request, res: Response) => {
+  try {
+    system.reset();
+    res.status(200).json({ success: true });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.get('/api/status', (_req: Request, res: Response) => {
   const elevators = system.getElevators().map(elevator => ({
     id: elevator.id,

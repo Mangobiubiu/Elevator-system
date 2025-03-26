@@ -2,6 +2,7 @@ import { FloorRequest, FloorAssignment } from './types';
 
 class SharedRequests {
   private static instance: SharedRequests;
+  private maxFloor: number;
   public isLocked: boolean = false;
 
   // To store the external requests
@@ -13,6 +14,7 @@ class SharedRequests {
   public assignedRequests: FloorAssignment[];
 
   private constructor(maxFloor: number) {
+    this.maxFloor = maxFloor;
     this.externalRequests = [];
     this.assignedRequests = [];
 
@@ -58,6 +60,23 @@ class SharedRequests {
     } finally {
       this.releaseLock();
     }
+  }
+
+  public reset(): void {
+    // Reset external requests
+    this.externalRequests = Array.from({ length: this.maxFloor + 1 }, () => ({
+      up: false,
+      down: false,
+    }));
+
+    // Reset assigned requests
+    this.assignedRequests = Array.from({ length: this.maxFloor + 1 }, () => ({
+      up: null,
+      down: null,
+    }));
+
+    // Reset lock
+    this.isLocked = false;
   }
 }
 
