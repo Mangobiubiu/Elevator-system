@@ -74,6 +74,13 @@ class Elevator {
       if (upwardTargets.length > 0) {
         return upwardTargets.reduce((prev, curr) => (prev.floor < curr.floor ? prev : curr));
       }
+
+      const downwardTargets = targetFloors.filter(
+        target => !target.direction || target.direction === directions.DOWN
+      );
+      if (downwardTargets.length > 0) {
+        return downwardTargets.reduce((prev, curr) => (prev.floor > curr.floor ? prev : curr));
+      }
     }
 
     if (this.state === elevatorStates.MOVING_DOWN) {
@@ -85,6 +92,13 @@ class Elevator {
       );
       if (downwardTargets.length > 0) {
         return downwardTargets.reduce((prev, curr) => (prev.floor > curr.floor ? prev : curr));
+      }
+
+      const upwardTargets = targetFloors.filter(
+        target => !target.direction || target.direction === directions.UP
+      );
+      if (upwardTargets.length > 0) {
+        return upwardTargets.reduce((prev, curr) => (prev.floor < curr.floor ? prev : curr));
       }
     }
 
