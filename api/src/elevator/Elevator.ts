@@ -35,9 +35,6 @@ class Elevator {
         (target: TargetFloor) => target.floor === floor && target.direction === direction
       )
     ) {
-      console.log(
-        `📋 Elevator ${this.id} added target floor: ${floor}${direction ? ` (${direction})` : ''}`
-      );
       this.targetFloors.push({ floor, direction });
     }
   }
@@ -213,22 +210,14 @@ class Elevator {
     this.updateState();
     // Simulate 1s to lift to the next floor if no one press the button at current floor
     if (this.state === elevatorStates.MOVING_UP) {
-      console.log(`🔼 Elevator ${this.id} starting to move up from floor ${this.currentFloor}`);
       await new Promise(resolve => setTimeout(resolve, this.moveSpeed * 1000));
       this.currentFloor++;
       await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate the time to slow down and stop
-      console.log(
-        `⬆️ Elevator ${this.id} completed upward movement, arriving at floor ${this.currentFloor}`
-      );
     }
     if (this.state === elevatorStates.MOVING_DOWN) {
-      console.log(`🔽 Elevator ${this.id} starting to move down from floor ${this.currentFloor}`);
       await new Promise(resolve => setTimeout(resolve, this.moveSpeed * 1000));
       this.currentFloor--;
       await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate the time to slow down and stop
-      console.log(
-        `⬇️ Elevator ${this.id} completed downward movement, arriving at floor ${this.currentFloor}`
-      );
     }
 
     // Make decision to answer which external request
@@ -248,7 +237,6 @@ class Elevator {
       );
 
       if (currentTargetIndex !== -1) {
-        console.log(`🎯 Elevator ${this.id} reached target floor ${this.currentFloor}`);
         this.willStop = true;
 
         // Remove all reached targets
@@ -259,10 +247,8 @@ class Elevator {
     // Open and close the elevator door
     if (this.willStop) {
       this.isOpeningDoor = true;
-      console.log(`🚪 Elevator ${this.id} opening doors at floor ${this.currentFloor}`);
       await new Promise(resolve => setTimeout(resolve, this.stopTime * 1000));
       this.isOpeningDoor = false;
-      console.log(`🚪 Elevator ${this.id} closing doors at floor ${this.currentFloor}`);
       this.willStop = false;
     }
   }

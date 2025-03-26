@@ -32,8 +32,6 @@ class ElevatorSystem {
       // Skip if the request is already registered
       if (this.sharedRequests.externalRequests[floor][directionKey]) return;
 
-      console.log(`🔔 Received ${direction} request from floor ${floor}`);
-
       // Set request status
       this.sharedRequests.externalRequests[floor][directionKey] = true;
 
@@ -50,7 +48,6 @@ class ElevatorSystem {
       throw new Error(`Invalid elevator ID: ${elevatorId}`);
     }
 
-    console.log(`🎯 Elevator ${elevatorId} selected floor ${targetFloor}`);
     this.elevators[elevatorId].addTargetFloor(targetFloor);
   }
 
@@ -100,9 +97,6 @@ class ElevatorSystem {
             direction === directions.UP &&
             floor === 0));
 
-      console.log(
-        `🚪 Elevator ${id} eligibility for ${direction} request at floor ${floor}: ${isEligible}`
-      );
       if (isEligible) {
         const distance = elevator.calculateDistance(floor);
         // Shorttest distance is priority, if the distance is the same, choose the idle elevator
@@ -123,14 +117,8 @@ class ElevatorSystem {
     });
 
     if (bestElevator !== null) {
-      console.log(
-        `✅ Assigned elevator ${bestElevator} to handle ${direction} request at floor ${floor}`
-      );
       this.elevators[bestElevator].addTargetFloor(floor, direction);
       this.sharedRequests.assignedRequests[floor][directionKey] = bestElevator;
-      console.log('Target floors:', this.elevators[bestElevator].targetFloors);
-    } else {
-      console.log(`⏳ ${direction} request at floor ${floor} waiting for assignment`);
     }
   }
 
@@ -164,7 +152,6 @@ class ElevatorSystem {
 
   public async init(): Promise<void> {
     if (this.isRunning) {
-      console.log('Elevator system is already running');
       return;
     }
 
@@ -191,8 +178,6 @@ class ElevatorSystem {
         });
       }, 0);
     });
-
-    console.log('Elevator system initialized with', this.elevators.length, 'elevators');
   }
 
   public reset(): void {
