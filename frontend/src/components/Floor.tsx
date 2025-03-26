@@ -35,7 +35,6 @@ const Floor: React.FC<FloorProps> = ({ floor }) => {
             <FloorButton
               direction={directions.UP}
               isActivated={isUpPressed}
-              isDisabled={isElevatorStopping}
               onClick={handleCallUp}
             />
           )}
@@ -44,7 +43,6 @@ const Floor: React.FC<FloorProps> = ({ floor }) => {
             <FloorButton
               direction={directions.DOWN}
               isActivated={isDownPressed}
-              isDisabled={isElevatorStopping}
               onClick={handleCallDown}
             />
           )}
