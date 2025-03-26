@@ -203,7 +203,18 @@ class Elevator {
     }
   }
 
-  // private handle;
+  private handleIdleElevator(
+    state: ElevatorState,
+    currentFloor: number,
+    targetFloors: TargetFloor[]
+  ): void {
+    if (state === elevatorStates.IDLE) {
+      const externalRequestTarget = targetFloors.find(
+        target => target.direction && target.floor === this.currentFloor
+      );
+      this.clearFloorRequest(currentFloor, externalRequestTarget?.direction as Direction);
+    }
+  }
 
   // Move elevator to the next floor
   public async move(): Promise<void> {
@@ -230,6 +241,9 @@ class Elevator {
 
       // This floor is the last target floor
       this.handleLastTargetFloor(this.currentFloor, this.targetFloors);
+
+      // Handle idle elevator
+      this.handleIdleElevator(this.state, this.currentFloor, this.targetFloors);
 
       // Handle target floors selected inside elevator
       const currentTargetIndex = this.targetFloors.findIndex(target =>
